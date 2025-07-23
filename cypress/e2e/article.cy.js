@@ -1,54 +1,40 @@
-describe('Article flow', () => {
-  let uniqueId;
-  let email;
-  let username;
-  let password;
+/// <reference types="cypress" />
 
-  let title;
-  let description;
-  let body;
+describe('should register and login user', () => {
+  beforeEach(() => {
+    cy.task('generateUser').then((user) => {
+      cy.wrap(user).as('user');
 
-  before(() => {
-    uniqueId = Date.now();
-    email = `testuser${uniqueId}@mail.com`;
-    username = `testuser${uniqueId}`;
-    password = 'Test1234';
+      cy.login(user.email, user.username, user.password);
 
-    title = `Title ${uniqueId}`;
-    description = 'Test description';
-    body = 'Test article body';
+      cy.task('createArticle').then(({ title, description, body }) => {
+        cy.createArticle(title, description, body);
 
-    cy.login(email, username, password);
-  });
+        cy.wrap(title).as('title');
+      });
 
-  describe('Create article', () => {
-    it('should create the article via UI', () => {
-      cy.visit('/');
-      cy.contains('a.nav-link', 'New Article').click();
-      cy.get('[placeholder="Article Title"]').type(title);
-      cy.get(`[placeholder="What's this article about?"]`).type(description);
-      cy.get('[placeholder="Write your article (in markdown)"]').type(body);
-      cy.contains('[type="button"]', 'Publish Article').click();
-      cy.contains('h1', title).should('exist');
+      cy.visit(`/profile/${user.username}`);
     });
   });
 
-  describe('Delete article', () => {
-    before(() => {
-      cy.visit('https://conduit.mate.academy/user/login');
-      cy.get('[placeholder="Email"]').type(email);
-      cy.get('[placeholder="Password"]').type(password);
-      cy.contains('button', 'Sign in').click();
-      cy.contains('a.nav-link', 'New Article');
-      cy.createArticle(title, description, body);
+  it('should delete an article', () => {
+    cy.contains('a', 'My Posts').should('have.class', 'active');
+
+    cy.get('@title').then((title) => {
+      cy.contains('.article-preview', `Article title: ${title}`).click();
+
+      cy.contains('h1', `${title}`);
     });
 
-    it('should delete the article', () => {
-      cy.visit('https://conduit.mate.academy/user/login');
-      cy.contains('a.nav-link', username).click();
-      cy.contains('h1', title).click();
-      cy.contains('button', 'Delete Article').click();
-      cy.url().should('eq', `${Cypress.config().baseUrl}`);
+    cy.get('.banner').find('.btn-outline-danger').click();
+
+    cy.get('@user').then((user) => {
+      cy.visit(`/profile/${user.username}`);
     });
+
+    cy.get('.article-preview').should(
+      'contain.text',
+      'No articles are here... yet.'
+    );
   });
 });
