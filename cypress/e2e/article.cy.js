@@ -1,40 +1,29 @@
-/// <reference types="cypress" />
+describe('Article flow', () => {
+  let user;
+  let article;
 
-describe('should register and login user', () => {
   beforeEach(() => {
-    cy.task('generateUser').then((user) => {
-      cy.wrap(user).as('user');
-
-      cy.login(user.email, user.username, user.password);
-
-      cy.task('createArticle').then(({ title, description, body }) => {
-        cy.createArticle(title, description, body);
-
-        cy.wrap(title).as('title');
+    cy.task('generateUser').then((generatedUser) => {
+      user = generatedUser;
+      cy.login(user.email, user.username, user.password).then(() => {
+        cy.task('generateArticle').then((generatedArticle) => {
+          article = generatedArticle;
+          cy.createArticle(article.title, article.description, article.body);
+        });
       });
-
-      cy.visit(`/profile/${user.username}`);
     });
   });
 
-  it('should delete an article', () => {
-    cy.contains('a', 'My Posts').should('have.class', 'active');
+  it('should create an article and see it in profile', () => {
+    cy.visit(`/profile/${user.username.toLowerCase()}`);
+    cy.contains('h1', article.title).should('be.visible');
+  });
 
-    cy.get('@title').then((title) => {
-      cy.contains('.article-preview', `Article title: ${title}`).click();
-
-      cy.contains('h1', `${title}`);
-    });
-
-    cy.get('.banner').find('.btn-outline-danger').click();
-
-    cy.get('@user').then((user) => {
-      cy.visit(`/profile/${user.username}`);
-    });
-
-    cy.get('.article-preview').should(
-      'contain.text',
-      'No articles are here... yet.'
-    );
+  it('should delete the article', () => {
+    cy.visit(`/profile/${user.username.toLowerCase()}`);
+    cy.contains('h1', article.title).click();
+    cy.contains('button', 'Delete Article').click();
+    cy.contains('.article-preview', 'No articles are here... yet.')
+      .should('be.visible');
   });
 });

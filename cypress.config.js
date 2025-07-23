@@ -8,24 +8,18 @@ module.exports = defineConfig({
       on('task', {
         generateUser() {
           const email = faker.internet.email();
-          const randomNumber = Math.floor(Math.random(1000) * 1000);
-          const username = faker.person.firstName() + randomNumber;
+          const randomNumber = Math.floor(Math.random() * 1000);
           return {
-            username: username.toLowerCase(),
+            username: faker.person.firstName() + randomNumber,
             email: email.toLowerCase(),
             password: '12345Qwert!'
           };
         },
-
-        createArticle() {
-          const title = faker.lorem.sentence(3);
-          const description = faker.lorem.paragraph(1);
-          const body = faker.lorem.paragraphs(2, '\n\n');
-
+        generateArticle() {
           return {
-            title,
-            description,
-            body
+            title: faker.lorem.word(),
+            description: faker.lorem.sentence(),
+            body: faker.lorem.paragraph(5)
           };
         }
       });
